@@ -5,6 +5,8 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -16,7 +18,8 @@ import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @Controller
-public class RequestBodyStringController {//PostMan테스트 시 Body탭-raw클릭-메시지 아무거나 적으면 됨.
+public class RequestBodyStringController {//HTTP 메시지 바디 - 단순 Text 테스트
+    //PostMan테스트 시 Body탭-raw클릭-메시지 아무거나 적으면 됨.
     /**
      * HTTP message Body에 데이터를 직접 담아서 요청
      *HTTP API에서 주로 사용, JSON, XML, TEXT
@@ -98,6 +101,19 @@ public class RequestBodyStringController {//PostMan테스트 시 Body탭-raw클�
 
 
         return new ResponseEntity<String>("ok",HttpStatus.CREATED);//메시지, 상태코드
+    }
+    /**
+     * HttpEntity<String>을 스프링에서는 @RequestBody 애노테이션으로 지원한다.
+     * 응답도 지원하는데 우리가 자주 사용했던 @ResponseBody 애노테이션이다.
+     * */
+    @ResponseBody
+    @PostMapping("/request-body-string-v4")
+    public String requestBodyStringV4(@RequestBody String messageBody){
+        // @ResponseBody를 적음으로써 반환 타입 HttpEntity<String> -> String
+
+        log.info("messageBody={}", messageBody);
+        //2022-12-01 00:36:43.263  INFO 13408 --- [nio-8080-exec-2] h.s.b.r.RequestBodyStringController  : messageBody=hello
+        return "ok";
     }
 
 
