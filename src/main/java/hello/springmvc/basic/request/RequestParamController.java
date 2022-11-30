@@ -128,6 +128,7 @@ public class RequestParamController { //HTTP 요청 파라미터 - 쿼리 파라
         return "ok";
     }
 
+    /*학원에서는 아래 방법을 사용해서 클라이언트가 요청한 값을 받아서 해결했지만, 결과적으로 아래 방법은 회사에서 사용안해 ㅠㅠㅠ */
     @ResponseBody
     @RequestMapping("/request-param-map")
     public  String requestParamMap(@RequestParam Map<String, Object> paramMap){
@@ -164,7 +165,7 @@ public class RequestParamController { //HTTP 요청 파라미터 - 쿼리 파라
     }*/
     @ResponseBody
     @RequestMapping("/model-attribute")
-    public String modelAttrivuteV1(@ModelAttribute HelloData helloData){
+    public String modelAttrivuteV1(@ModelAttribute HelloData helloData){//("") <-- 이 친구는 view에 보낼때 거기서 사용할 명칭인데, 현재 테스트에서는 필요 없어서
         //@ModelAttribute는 HelloData 객체가 생성되고, 요청 파라미터의 값도 모두 들어가 있다.
 
         log.info("username={}, age={}", helloData.getUsername(), helloData.getAge());
