@@ -18,7 +18,7 @@ import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @Controller
-public class RequestBodyStringController {//HTTP 메시지 바디 - 단순 Text 테스트
+public class RequestBodyStringController {//HTTP 메시지 바디 - 단순 Text(문자) 테스트
     //PostMan테스트 시 Body탭-raw클릭-메시지 아무거나 적으면 됨.
     /**
      * HTTP message Body에 데이터를 직접 담아서 요청
