@@ -1,9 +1,10 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>타임리프</title>
+    <title>타임리프로 생성</title>
 </head>
 <body>
+<!--스프링은 '동적' 뷰 템플릿은 templates 폴더 안에서 읽는다-->
 <!--렌더링이 될때 th:text="${data}"에 값이 (empty부분이 text인데)여기 값을 바꿈.-->
 <p th:text="${data}">empty</p> <!--data누르면 바인딩(입력)한 Controller안에 메서드로 이동함.(유료버전만 가능, 안될때도 있음.ㅎㅎ)-->
 </body>

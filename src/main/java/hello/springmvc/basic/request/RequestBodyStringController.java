@@ -19,107 +19,96 @@ import java.nio.charset.StandardCharsets;
 @Slf4j
 @Controller
 public class RequestBodyStringController {//HTTP 메시지 바디 - 단순 Text(문자) 테스트
-    //PostMan테스트 시 Body탭-raw클릭-메시지 아무거나 적으면 됨.
-    /**
-     * HTTP message Body에 데이터를 직접 담아서 요청
-     *HTTP API에서 주로 사용, JSON, XML, TEXT
-     * 데이터 형식은 주로 JSON 사용
-     * POST, PUT, PATCH
-     *
-     * 요청 파라미터와 다르게, HTTP 메시지 바디를 통해 데이터가 직접 넘어오는 경우.
-     * @RequestParam, @ModelAttribute를 사용할 수 없다,.
-     * (!!!물론 HTML Form 형식으로 전달되는 경우는 요청 파리미터로 인정됨.!!!)
-     */
+
+    //✌ 요청 파라미터와 다르게 Http 메시지 바디를 통해 데이터가 직접 데이터가 넘어오는 경우는
+    // @RequestParam, @ModelAttribute를 사용할 수 없다!!!!
+    // (물론 HTML Form형식으로 전달되는 경우는 요청 파리미터로 인정된다.)
+    // - 먼저 가장 단순한 텍스트 메시지를 HTTP 메시지 바디에 담아서 전송하고 읽어보자
+    // - ✌️Http 메시지 바디의 데이터를 InputStream을 사용해서 직접 읽을 수 있다.
 
     @PostMapping("/request-body-string-v1")
-    public  void requestBodyString(HttpServletRequest request, HttpServletResponse response) throws IOException{
+    public void requestBodyString(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
-        //PostMan
-        //http://127.0.0.1:8080/request-body-string-v1
-        //Body탭 - raw 클릭 - Text선택 - {"data":"value"}
+        //inputSream 얻기
         ServletInputStream inputStream = request.getInputStream();
-        String messageBody = StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);//Stream은 byte코드이기 때문에. 인코딩을 지정해서 문자로 바꿔야한다.
 
-        log.info("messageBody={}", messageBody);
-        //messageBody={"data":"value"}
+        //byte코드를 인코딩해야한다.
+        String messageBody = StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
 
-        response.getWriter().write("ok");
+        //Postman에서 Body선택 - raw클릭 후 'Text' - hello 입력
+        log.info("messageBody={}",messageBody);//messageBody=hello
+
+        response.getWriter().write("ok");//회사에서도 이렇게 많이 사용하더라~(return 타입은 void로 하고)
     }
 
     /**
-     * 파라미터에 InputStream을 적어서 받을 수도 있다.
-     * ServletInputStream inputStream = request.getInputStream(); <-- 안적어도 됌.
-     */
+     * [스프링 MVC는 다음 파라미터를 지원한다.]
+     * - InputStream(Reader) : HTTP 요청 메시지 바디의 내용을 직접 조회
+     * - OutputStream(Writer) : Http 응답 메시지의 바디에 직접 결과 출력
+     * */
     @PostMapping("/request-body-string-v2")
     public void requestBodyStringV2(InputStream inputStream, Writer responseWriter) throws IOException {
-        /**
-         * 스프링 MVC는 다음 파라미터를 지원한다.
-         * InputStream(Reader): HTTP 요청 메시지 바디의 내용을 직접 조회
-         * OutputStream(Writer): HTTP 응답 메시지의 바디에 직접 결과 출력
-         * */
-        String messageBody = StreamUtils.copyToString(inputStream,StandardCharsets.UTF_8);
-        log.info("messageBody={}", messageBody);
+        //HttpServletRequest을 전체 다 사용하는게 아니지? InputStream만 사용해도 되기때문에~
+
+        //byte코드를 인코딩해야한다.
+        String messageBody = StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
+
+//      //Postman에서 Body선택 - raw클릭 후 'Text' - hi 입력
+        log.info("messageBody={}",messageBody);//messageBody=hi
         responseWriter.write("ok");
     }
 
-    /**
-     * HttpEntity : Http header, body 정보를 편리하게 조회 가능하게 해준다(스프링)
-     * - 메시지 바디 정보를 직접 조회(@RequestParam x, @ModelAttribute x <-- 요청 파라미터(GTE-쿼리스트링, POST는 <form></form>으로 보낼때만 허용) 조회시만 사용)
-     * -♦ HttpMessageConverter 사용 -> StringHttpMessageConvert 적용
-     *
-     * 응답에서 HttpEntity 사용 가능
-     * - 메시지 바디 정보 직접 반환(view 조회X)
-     * - HttpMessageConvertter 사용 -> StringHttpMessageConverter적용
-     *
-     * */
-
+    //Stream 바꾸는게 귀찮지?! 스프링 알아서 해줘!
+    // ==> Http 메시지 컨버터 기능이 있다.
+    // HTTP 메시지 자체를 그대로 주고 받게할 수 있다.
     @PostMapping("/request-body-string-v3")
-    public HttpEntity<String> requestBodyStringV3(HttpEntity<String> httpEntity) throws IOException {
+    public  HttpEntity<String> requestBodyStringV3(HttpEntity<String> httpEntity){
+        /**
+         * HttpEntity : HTTP header, body 정보를 편리하게 조회
+         * - '메시지 바디 정보를 직접 조회'
+         * - 요청 파라미터를 조회하는 기능과 관계 없음 @RequestParam x, @ModelAttribute x
+         *
+         * HttpEntity는 '응답에서도' 사용가능
+         * - 메시지 바디 정보 직접 반환
+         * - 헤더 정보 포함 가능
+         * - view 조회 x
+         * */
+        String messageBody = httpEntity.getBody();
+        log.info("messageBody={}", messageBody);
 
-        HttpHeaders messageHeader = httpEntity.getHeaders();//헤더 정보를 얻어올 수 있음.
-        log.info("messageHeader={}",messageHeader);
+        return new HttpEntity<>("ok");//첫번째 파리미터는 Http메시지 바디에 보낼 내용을 적는다.
+    }
 
-        String messageBody = httpEntity.getBody();//메시지 바디 정보를 얻어올 수 있다.
+    //HttpEntity를 상속받은 다음 객체들도 같은 기능을 제공한다.
+    @PostMapping("/request-body-string-v4")
+    public  HttpEntity<String> requestBodyStringV4(RequestEntity<String> httpEntity){
+        //RequestEntity
+        // - HttpMethod, url 정보가 추가, 요청에서 사용
+        //ResponseEntity
+        // - Http상태 코드 설정 가능, 응답에서 사용
+        // - return new ResponseEntity<String>("Hello World", responseHeaders, HttpStatus.CREATED)
+        String messageBody = httpEntity.getBody();
         log.info("messageBody={}",messageBody);
 
-        return new HttpEntity<>("ok");
+        return new ResponseEntity<String>("ok", HttpStatus.CREATED);
     }
 
-    /*위와 결과는 같음. 아래는 HttpEntity를 상속하는 RequestEntity, ReponseEntity를 보여주기 위해서 */
-    @PostMapping("/request-body-string-v3_1")
-    public HttpEntity<String> requestBodyStringV3_1(RequestEntity<String> httpEntity) throws IOException {
-        
-        //PostMan
-        //http:127.0.0.1:8080/request-body-string-v3_1
-        //Body탭 - raw클릭 - hello입력 후 - Send 클릭
-
-        HttpHeaders messageHeader = httpEntity.getHeaders();//헤더 정보를 얻어올 수 있음.
-        log.info("messageHeader={}",messageHeader);
-
-        String messageBody = httpEntity.getBody();//메시지 바디 정보를 얻어올 수 있다.
-        log.info("messageBody={}",messageBody);//messageBody=hello
-
-
-        return new ResponseEntity<String>("ok",HttpStatus.CREATED);//메시지, 상태코드
-    }
-    /**
-     * HttpEntity<String>을 스프링에서는 @RequestBody 애노테이션으로 지원한다.
-     * 응답도 지원하는데 우리가 자주 사용했던 @ResponseBody 애노테이션이다.
-     * */
+    //다 귀찮아!!
+    //요새는 이렇게 많이 사용해
     @ResponseBody
-    @PostMapping("/request-body-string-v4")
-    public String requestBodyStringV4(@RequestBody String messageBody){
-        // @ResponseBody를 적음으로써 반환 타입 HttpEntity<String> -> String
-
-        log.info("messageBody={}", messageBody);
-        //2022-12-01 00:36:43.263  INFO 13408 --- [nio-8080-exec-2] h.s.b.r.RequestBodyStringController  : messageBody=hello
+    @PostMapping("/request-body-string-v5")
+    public  String requestBodyStringV5(@RequestBody String messageBody){
+        //근데! header정보가 필요하다면
+        //@RequestHeader를 사용하거나 HttpEntity를 사용하면 된다.
+        log.info("messageBody={}",messageBody);
         return "ok";
+
+        //(강조!!) 이렇게 메시지 바디를 직접 조회하거나 기능은 요청 파라미터를 조회하는
+        // @RequestParam, @ModelAttribute와는 전혀 관계가 없다.
     }
 
-
-
-
-
-
-
+    //정리
+    /**
+     * https://blog.naver.com/nanabi08/222971170367
+     * */
 }

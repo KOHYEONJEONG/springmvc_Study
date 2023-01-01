@@ -24,7 +24,11 @@ public class ResponseViewController { //HTTP 응답
     }
 
     /* @ResponseBody를 붙였으니 문자가 HTTP 메시지 BODY에 값을 보냄.
-    * String을 반환하는 경우 - View 또는*/
+    * String을 반환하는 경우 - View or HTTP 메시지
+      - @ResponseBody 가 없으면 response/hello 로 뷰 리졸버가 실행되어서 뷰를 찾고, 렌더링 한다.
+      - @ResponseBody 가 있으면 뷰 리졸버를 실행하지 않고, HTTP 메시지 바디에 직접 response/hello 라는
+        문자가 입력된다.
+     */
     @ResponseBody
     @RequestMapping("/response-view-v2_1")
     public String responseViewV2_1(Model model){

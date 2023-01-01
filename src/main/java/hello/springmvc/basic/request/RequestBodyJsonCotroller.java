@@ -1,5 +1,6 @@
 package hello.springmvc.basic.request;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hello.springmvc.basic.HelloData;
 import lombok.extern.slf4j.Slf4j;
@@ -31,84 +32,89 @@ import java.nio.charset.StandardCharsets;
 @Controller
 public class RequestBodyJsonCotroller {//HTTP 요청 메시지 - JSON 테스트
 
-    //json이니까 ObjectMapper필요, JSON 데이터를 자바 객체로 변환한다.
-   private ObjectMapper objectMapper = new ObjectMapper();
+    //json이니까 ObjectMapper를 생성해야겠지? 왜?
+    private ObjectMapper objectMapper = new ObjectMapper();//문자로 된 JSON 데이터를 Jackson 라이브러리인 objectMapper 를 사용해서 자바 객체로 변환한다.
 
-   @PostMapping("/request-body-json-v1")
+    @PostMapping("/request-body-json-v1")
     public void requestBodyJsonV1(HttpServletRequest request, HttpServletResponse response) throws IOException {
-       //HttpServletRequest를 사용해서 직접 HTTP 메시지 바디에서 데이터를 읽어와서, 문자로 변환한다.
-       ServletInputStream inputStream = request.getInputStream();
-       String messageBody = StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);//stream은 byte코드로 읽어오기에, 인코딩을 해줘야한다.
+        ServletInputStream inputStream = request.getInputStream();
+        String messageBody = StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
 
-       log.info("messageBody={}", messageBody);
-
-       HelloData helloData = objectMapper.readValue(messageBody, HelloData.class);//HelloData에 데이터를 담아준다.
-       //문자로 된 JSON 데이터를 Jackson 라이브러리인 objectMapper 를 사용해서 자바 객체로 변환한다.
-
-       log.info("username={}, age={}",helloData.getUsername(), helloData.getAge());
-
-       response.getWriter().write("ok");
-   }
-
-   /*위와 결과는 같지만, v1보다 훨씬 간결해*/
-    @ResponseBody
-    @PostMapping("/request-body-json-v2")
-    public String requestBodyJsonV2(@RequestBody String messageBody) throws IOException {
-
-        log.info("messageBody={}", messageBody);
-        //2022-12-01 09:22:43.684  INFO 9676 --- [nio-8080-exec-4] h.s.b.request.RequestBodyJsonCotroller   : messageBody={"username":"hello","age":20}
-
+        log.info("messageBody={}",messageBody);
         HelloData helloData = objectMapper.readValue(messageBody, HelloData.class);
         log.info("username={}, age={}",helloData.getUsername(), helloData.getAge());
-        //2022-12-01 09:22:43.708  INFO 9676 --- [nio-8080-exec-4] h.s.b.request.RequestBodyJsonCotroller   : username=hello, age=20
 
+        response.getWriter().write("ok");
+    }
+
+    /**
+     * @RequestBody
+     * HttpMessageConverter 사용 -> StringHttpMessageConverter 적용
+     *
+     * @ResponseBody
+     * - 모든 메서드에 @ResponseBody 적용
+     * - 메시지 바디 정보 직접 반환(✌️view 조회X)
+     * - HttpMessageConverter 사용 -> StringHttpMessageConverter 적용
+     */
+    @ResponseBody
+    @PostMapping("/request-body-json-v2")
+    public String requestBodyJsonV2(@RequestBody String messageBody) throws JsonProcessingException {
+        //raw-json선택
+        // 입력 -> {"username":"고현정","age":12}
+        //Headers탭에서 Content-Type : application/json <--으로 바뀌는 거 확인가능.
+        HelloData data = objectMapper.readValue(messageBody, HelloData.class);
+        log.info("username={}, age={}", data.getUsername(),data.getAge());
         return "ok";
     }
 
     /**
-     * ♦️더 간결해짐!!
-     * ObjectMapper도 안 사용해도
-     * @ModelAttribte 기능처럼 바로 @RequestBody HelloData 를 선언하면 된다.
-     * (=> @RequestBody에 직접 만든 객체를 지정할 수 있다!!!!)
+     * ✌️
+     * 문자로 변환하고 다시 json으로 변환하는 과정이 불편하다.
+     * @ModelAttribute처럼 한번에 객체로
+     * 변환할 수는 없을까? 아래 예제를 보자.
+     *
+     *
+     * ❤️생략불가! =>  HelloData에 @RequestBody 를 생략하면 @ModelAttribute 가 적용되어버린다.
+     *              => 생략하면 HTTP 메시지 바디가 아니라 요청 파라미터를 처리하게 된다
+     * @RequestBody 객체 파라미터
+     * @RequestBody HelloData data
+     * @RequestBody 에 직접 만든 객체를 지정할 수 있다
+     *
+     *
      * */
     @ResponseBody
     @PostMapping("/request-body-json-v3")
-    public String requestBodyJsonV3(@RequestBody HelloData data){
+    public String requestBodyJsonV3(@RequestBody HelloData helloData){
+        //HttpEntity , @RequestBody 를 사용하면 'HTTP 메시지 컨버터'가
+        // HTTP 메시지 바디의 내용을 우리가 => {"username":"고현정","age":12}
+        // 원하는 문자뿐만 아니라 객체 등으로 변환해준다. => @RequestBody HelloData helloData
+        // HTTP 메시지 컨버터는 문자 뿐만 아니라 JSON도 객체로 변환해주는데, 우리가 방금 V2에서 했던 작업을
+        // 대신 처리해준다
 
-        log.info("username={}, age={}",data.getUsername(), data.getAge());
-        //2022-12-01 09:25:27.138  INFO 9676 --- [nio-8080-exec-3] h.s.b.request.RequestBodyJsonCotroller   : username=hello, age=20
+        //한마디로 HelloData data = objectMapper.readValue(messageBody, HelloData.class);가 필요없다. 대신 넣어주기 때문에
+       log.info("username={}, age={}", helloData.getUsername(),helloData.getAge());
         return "ok";
     }
 
-    /*위와 같은 결과, HttpEntity<제너릭>를 사용해도 되는데 V3가 훨씬 간결 하긴 하지용*/
     @ResponseBody
     @PostMapping("/request-body-json-v4")
-    public String requestBodyJsonV4(HttpEntity<HelloData> httpEntity){
-        HelloData data = httpEntity.getBody();//http에서 body를 꺼내면 HelloData를 제너릭에 넣어줬으니 HelloData 타입으로 반환
-        log.info("username={}, age={}",data.getUsername(), data.getAge());
-        return "ok";
+    public HelloData requestBodyJsonV4(HttpEntity<HelloData> httpEntity) {
+        /*
+        @RequestBody 요청
+        -> JSON 요청 HTTP 메시지 컨버터 객체
+
+        @ResponseBody 응답
+        -> 객체 HTTP 메시지 컨버터 JSON 응답*/
+
+        HelloData data = httpEntity.getBody();
+        log.info("username={}, age={}", data.getUsername(), data.getAge());
+        return data;//data객체가 json바뀐 문자가 HTTP 메시지 바디에 응답으로 뿌려준다.
+
+        /*
+        * {
+         *     "username": "고현정",
+         *     "age": 12
+         * }
+         * */
     }
-
-    /**
-     * [여기까지 요약]
-     * Http 메시지 컨버터는
-     * 1)문자            <-Content-Type : text/plan
-     * 2)JSON 객체로 변환 <-Content-Type : application/json
-     * */
-
-@ResponseBody//객체-> http 메시지 컨버터 - JSON 응답 해줌.
-@PostMapping("/request-body-json-v5")
-public HelloData requestBodyJsonV5(@RequestBody HelloData data){//@RequestBody : JSON 요청 - http 메시지 컨버터(그중에서 JSON을 처리하는 컨버터가 실행되징.) - 객체로 바꿔서 넘어옴.
-    log.info("username={}, age={}",data.getUsername(), data.getAge());//2022-12-01 09:56:07.493  INFO 1136 --- [nio-8080-exec-1] h.s.b.request.RequestBodyJsonCotroller   : username=hello, age=20
-    return data;//JSON형태로 반환된다.(@ResponseBody애 의해서)
-    /**
-     * return 값
-     * {
-     *     "username": "hello",
-     *     "age": 20
-     * }
-     * */
-}
-
-
 }

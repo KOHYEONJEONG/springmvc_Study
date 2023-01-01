@@ -19,62 +19,47 @@ import java.io.IOException;
 //@ResponseBody를 넣으면 view를 찾지 않고 HTTP 메시지 바디에 값을 뿌려준다.
 @RestController//@Controller 대신에 @RestController 애노테이션을 사용하면 컨트롤러에 '모두 @ResponseBody가 적용'되는 효과가 있다.
                 //따서 뷰 템블릿을 사용하는 것이 아니라, HTTP 메시지 바디에 직접 데이터를 입력한다. 이름 그대로 RestAPI(HTTP API)를 만들 때 사용하는 컨트롤러이다.
-public class ResponseBodyController {//HTTP 응답 - HTTP API, 메시지 바디에 직접 입력
+public class ResponseBodyController {//HTTP 응답 - HTTP API, 'HTTP 메시지 바디'에 직접 입력(HTML에 담아 보내는 게 아님)
 
-    //단순 Text타입으로 응답
-    @GetMapping("/response-body-string-v1")
+
+    //가장 단순한 방법
+   @GetMapping("/response-body-string-v1")
     public void responseBodyV1(HttpServletResponse response) throws IOException{
+      //HttpServletResponse 객체를 통해서 HTTP 메시지 바디에 직접 ok 응답 메시지를 전달한다
         response.getWriter().write("ok");
     }
 
-    /*V1 응답을 좀 더 단순하게 */
     @GetMapping("/response-body-string-v2")
-    public HttpEntity<String> responseBodyV2(HttpServletResponse response) throws IOException{
-       return new ResponseEntity<>("ok", HttpStatus.OK);
+    public ResponseEntity<String> responseBodyV1(){
+       return new ResponseEntity<String>("ok",HttpStatus.OK);
     }
 
-    /*더 더 간결하게*/
     //@ResponseBody
     @GetMapping("/response-body-string-v3")
-    public String responseBodyV3(){ //문자 처리
-        return "ok";
+    public String responseBodyV3(){
+       return "ok";
     }
 
-    /**
-     * JSON타입으로 보낼 때
-     *
-     * 동적으로 HTTP응답코드를 변경할 때는 -> ResponseEntity<>를 추천한다.
-     * 아무래도 @ResponseStatus(HttpStatus.OK)는 어노테이션이다 보니 동적으로 변경하기 싶지 않다.
-     *
-     * */
+    //json으로 응답
+   // @ResponseBody
     @GetMapping("/response-body-json-v1")
-    public ResponseEntity<HelloData> responseBodyV4() { //문자 처리
-        HelloData helloData = new HelloData();
-        helloData.setUsername("userA");
-        helloData.setAge(20);
-        return new ResponseEntity<>(helloData, HttpStatus.OK);
-        /**
-         * {
-         *     "username": "userA",
-         *     "age": 20
-         * }
-         * */
+    public ResponseEntity<HelloData> responseBodyJsonV1(){
+       HelloData helloData = new HelloData();
+       helloData.setUsername("userA");
+       helloData.setAge(20);
+       return new ResponseEntity<>(helloData, HttpStatus.CREATED); //두번째 파라미터는 상태코드이다.(변경도 가능하다)
     }
 
-    @ResponseStatus(HttpStatus.OK)
-    //@ResponseBody
+    //좀더 간결하게 적을 수도 있다!!! 단 상태코드를 사용해야한다면 아래 어노테이션을 사용하자.
+    //@ResponseStatus(HttpStatus.OK) <-- 단 동적으로 바꿔야 한다면 new ResponseEntity<>를 사용하자.
+    @ResponseStatus(HttpStatus.OK) //이 어노테이션을 사용하면 상태값도 넘겨줄 수 있어
+  //  @ResponseBody
     @GetMapping("/response-body-json-v2")
-    public HelloData responseBodyV2() { //문자 처리
+    public HelloData responseBodyJsonV2(){
         HelloData helloData = new HelloData();
         helloData.setUsername("userA");
         helloData.setAge(20);
-        return helloData;
-        /**
-         * {
-         *     "username": "userA",
-         *     "age": 20
-         * }
-        * */
+       return helloData;
     }
 
 }
